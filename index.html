@@ -3,67 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Adaptive Stream Demo</title>
-  <style>
-    body{
-      margin:0;
-      padding:20px;
-      background:#111;
-      color:#fff;
-      font-family:system-ui, sans-serif;
-    }
-    video{
-      width:100%;
-      max-width:960px;
-      aspect-ratio:16/9;
-      background:#000;
-      display:block;
-      margin:0 auto;
-    }
-  </style>
+  <title>ANDROID URL Test</title>
 </head>
-<body>
+<body style="background:#111;color:#fff">
 
-<h1>Adaptive Stream Demo</h1>
+<h2>ANDROID client test</h2>
 
-<video id="player" controls autoplay muted playsinline></video>
+<video id="v" controls autoplay muted playsinline style="width:100%"></video>
 
 <script>
 const videoId = "VtGSvx866Js";
-const video = document.getElementById("player");
+const v = document.getElementById("v");
 
 async function load() {
   const res = await fetch(`/video?id=${videoId}`);
   const data = await res.json();
+  console.log(data);
 
-  if (!data.video || !data.audio) {
-    console.error("ストリーム取得失敗", data);
-    return;
+  if (data.url) {
+    v.src = data.url;
+  } else {
+    console.error("URL取得失敗", data);
   }
-
-  const mediaSource = new MediaSource();
-  video.src = URL.createObjectURL(mediaSource);
-
-  mediaSource.addEventListener("sourceopen", async () => {
-    const videoMime = `${data.video.mimeType}; codecs="${data.video.codecs}"`;
-    const audioMime = `${data.audio.mimeType}; codecs="${data.audio.codecs}"`;
-
-    const videoBuffer = mediaSource.addSourceBuffer(videoMime);
-    const audioBuffer = mediaSource.addSourceBuffer(audioMime);
-
-    const append = async (buffer, url) => {
-      const res = await fetch(url);
-      const buf = await res.arrayBuffer();
-      buffer.appendBuffer(buf);
-      await new Promise(r => buffer.addEventListener("updateend", r, { once:true }));
-    };
-
-    await append(videoBuffer, data.video.url);
-    await append(audioBuffer, data.audio.url);
-
-    mediaSource.endOfStream();
-    video.play();
-  });
 }
 
 load();
