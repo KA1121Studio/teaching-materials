@@ -31,40 +31,37 @@
 
 <h1>外部URL経由 Stream Demo</h1>
 
-<video id="videoPlayer" controls autoplay playsinline></video>
+<video id="videoPlayer" controls autoplay muted playsinline></video>
 
 <script>
-  const videoId = "VtGSvx866Js"; // 好きな動画ID
+  const videoId = "VtGSvx866Js"; 
   const video = document.getElementById("videoPlayer");
 
-async function loadVideo(id){
-  try{
-    const res = await fetch(`/video?id=${id}`);
-    const data = await res.json();
-    console.log("Fetched JSON:", data);
+  async function loadVideo(id){
+    try{
+      const res = await fetch(`/video?id=${id}`);
+      const data = await res.json();
+      console.log("Fetched JSON:", data);
 
-    if(data.proxyUrl){
-      video.src = data.proxyUrl;
-      video.muted = true; // 自動再生対策
-      await video.play().catch(() => {
-        console.warn("自動再生がブロックされました。再生ボタンを押してください");
-      });
-    } else {
-      console.error("再生URLが見つかりません");
-      const link = document.createElement('a');
-      link.href = `https://www.youtube.com/watch?v=${id}`;
-      link.target = "_blank";
-      link.textContent = "YouTubeで再生する";
-      document.body.appendChild(link);
+      if(data.proxyUrl){
+        video.src = data.proxyUrl;
+        await video.play().catch(() => {
+          console.warn("自動再生がブロックされました。再生ボタンを押してください");
+        });
+      } else {
+        console.error("再生URLが見つかりません");
+        const link = document.createElement('a');
+        link.href = `https://www.youtube.com/watch?v=${id}`;
+        link.target = "_blank";
+        link.textContent = "YouTubeで再生する";
+        document.body.appendChild(link);
+      }
+    } catch(err){
+      console.error("Fetch error:", err);
     }
-
-  } catch(err){
-    console.error("Fetch error:", err);
   }
-}
 
-loadVideo(videoId);
-
+  loadVideo(videoId);
 </script>
 
 </body>
