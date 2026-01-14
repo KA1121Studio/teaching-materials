@@ -1,8 +1,7 @@
-import express from 'express';
-import { Innertube } from 'youtubei.js';
-import fetch from 'node-fetch';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import express from "express";
+import fetch from "node-fetch";
+import { fileURLToPath } from "url";
+import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,81 +9,74 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 /**
- * adaptiveFormats から
- * - video only
- * - audio only
- * を1本ずつ返す
+ * ANDROID client で InnerTube API を直接叩く
  */
-app.get('/video', async (req, res) => {
+app.get("/video", async (req, res) => {
   const videoId = req.query.id;
-  if (!videoId) return res.status(400).json({ error: 'video id required' });
+  if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-    const youtube = await Innertube.create();
-    const info = await youtube.getInfo(videoId);
+    const apiKey = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"; // 公開鍵（youtube内部用）
 
-    const adaptive = info.streamingData?.adaptiveFormats || [];
+    const body = {
+      context: {
+        client: {
+          clientName: "ANDROID",
+          clientVersion: "18.11.34",
+          androidSdkVersion: 33,
+          userAgent:
+            "com.google.android.youtube/18.11.34 (Linux; U; Android 13)",
+          hl: "ja",
+          gl: "JP"
+        }
+      },
+      videoId
+    };
 
+    const ytRes = await fetch(
+      `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "user-agent": body.context.client.userAgent,
+          "x-youtube-client-name": "3",
+          "x-youtube-client-version": body.context.client.clientVersion
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    const json = await ytRes.json();
+    const adaptive = json?.streamingData?.adaptiveFormats || [];
+
+    // video only（高画質優先）
     const videoStream = adaptive
-      .filter(f => f.hasVideo && !f.hasAudio && f.url)
-      .sort((a, b) => (b.height || 0) - (a.height || 0))[0];
-
-    const audioStream = adaptive
-      .filter(f => f.hasAudio && !f.hasVideo && f.url)
+      .filter(f => f.mimeType?.startsWith("video/") && f.url)
       .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
 
-    if (!videoStream || !audioStream) {
-      return res.status(500).json({ error: '映像または音声が取得できない' });
+    if (!videoStream) {
+      return res.status(500).json({ error: "video stream not found" });
     }
 
+    // ★ ここで「君が貼ったのと同型のURL」が出る
     res.json({
-      video: {
-        url: `/proxy?url=${encodeURIComponent(videoStream.url)}`,
-        mimeType: videoStream.mimeType,
-        codecs: videoStream.codecs
-      },
-      audio: {
-        url: `/proxy?url=${encodeURIComponent(audioStream.url)}`,
-        mimeType: audioStream.mimeType,
-        codecs: audioStream.codecs
-      }
+      url: videoStream.url,
+      itag: videoStream.itag,
+      mimeType: videoStream.mimeType
     });
 
-  } catch (err) {
-    console.error('YouTube error:', err);
-    res.status(500).json({ error: '動画取得に失敗しました' });
-  }
-});
-
-/**
- * googlevideo.com 専用プロキシ
- */
-app.get('/proxy', async (req, res) => {
-  const url = req.query.url;
-  if (!url) return res.status(400).send('URL required');
-
-  if (!url.startsWith('https://') || !url.includes('googlevideo.com')) {
-    return res.status(400).send('Invalid URL');
-  }
-
-  try {
-    const response = await fetch(url);
-    res.set({
-      'Content-Type': response.headers.get('content-type'),
-      'Accept-Ranges': 'bytes'
-    });
-    response.body.pipe(res);
-  } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(500).send('Proxy failed');
+  } catch (e) {
+    console.error("ANDROID client error:", e);
+    res.status(500).json({ error: "failed to fetch video" });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log("Server running on", PORT);
 });
