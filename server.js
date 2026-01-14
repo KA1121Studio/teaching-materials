@@ -1,10 +1,11 @@
 import express from 'express';
-import path from 'path';
+import Youtube from 'youtubei.js';
+import fetch from 'node-fetch'; // プロキシ用
 import { fileURLToPath } from 'url';
-import Youtube from 'youtubei.js'; // 修正版: Client ではなくデフォルトエクスポート
+import path from 'path';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // ES Modules 対応
 const __filename = fileURLToPath(import.meta.url);
@@ -15,7 +16,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// YouTube 直接再生 URL を返す
+// YouTube ストリーム URL を取得してプロキシ用 URL を返す
 app.get('/video', async (req, res) => {
   const videoId = req.query.id;
   if (!videoId) return res.status(400).json({ error: 'video id required' });
@@ -24,24 +25,14 @@ app.get('/video', async (req, res) => {
     const youtube = new Youtube();
     const video = await youtube.getVideo(videoId);
 
-    // MP4形式で再生可能なストリームを選択
     const formats = video.streamingData.formats;
-    // 720p以上、音声付き動画を優先
-    const stream = formats.find(f => f.hasVideo && f.hasAudio && f.qualityLabel?.includes('720'));
+    let stream = formats.find(f => f.hasVideo && f.hasAudio && f.qualityLabel?.includes('720'));
+    if(!stream) stream = formats.find(f => f.hasVideo && f.hasAudio);
 
-    if (!stream) {
-      return res.status(500).json({ error: '再生可能なストリームが見つかりません' });
-    }
+    if(!stream) return res.status(500).json({ error: '再生可能なストリームが見つかりません' });
 
-    // JSONで返す
-    res.json({
-      id: video.id,
-      title: video.title,
-      streamUrl: stream.url,
-      thumbnail: video.thumbnail?.url,
-      views: video.views?.toLocaleString(),
-      author: video.channel?.name
-    });
+    // ブラウザからサーバ経由で再生するための proxy URL
+    res.json({ proxyUrl: `/proxy?url=${encodeURIComponent(stream.url)}` });
 
   } catch (err) {
     console.error('YouTube fetch error:', err);
@@ -49,7 +40,26 @@ app.get('/video', async (req, res) => {
   }
 });
 
-// サーバ起動
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+// プロキシとして動画データを返す
+app.get('/proxy', async (req, res) => {
+  const url = req.query.url;
+  if(!url) return res.status(400).send('URL required');
+
+  try {
+    const response = await fetch(url);
+
+    // ヘッダーをそのままコピー
+    res.set({
+      'Content-Type': response.headers.get('content-type'),
+      'Content-Length': response.headers.get('content-length'),
+      'Accept-Ranges': response.headers.get('accept-ranges') || 'bytes',
+    });
+
+    response.body.pipe(res);
+  } catch(err) {
+    console.error('Proxy error:', err);
+    res.status(500).send('Proxy failed');
+  }
 });
+
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
