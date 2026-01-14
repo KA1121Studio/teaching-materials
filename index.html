@@ -29,14 +29,24 @@
 </head>
 <body>
 
-<h1>ytdl-core direct stream test</h1>
+<h1>ytdl-core direct stream test → youtubei.js版</h1>
 
-<video
-  src="/video?id=VtGSvx866Js"
-  controls
-  autoplay
-  playsinline>
-</video>
+<video id="videoPlayer" controls autoplay playsinline></video>
+
+<script>
+  const videoId = "VtGSvx866Js"; // 好きな動画ID
+  fetch(`/video?id=${videoId}`)
+    .then(res => res.json())
+    .then(data => {
+      if(data.url){
+        const video = document.getElementById("videoPlayer");
+        video.src = data.url;
+        video.play();
+      } else {
+        console.error("Stream URL取得失敗", data.error);
+      }
+    });
+</script>
 
 </body>
 </html>
