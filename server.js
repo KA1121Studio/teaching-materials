@@ -31,11 +31,10 @@ app.get("/video", async (req, res) => {
 const body = {
   context: {
     client: {
-      clientName: "ANDROID",
-      clientVersion: "18.12.34",
-      androidSdkVersion: 33,
+      clientName: "WEB_EMBEDDED_PLAYER",
+      clientVersion: "1.20231108.01.00",
       userAgent:
-        "com.google.android.youtube/18.12.34 (Linux; U; Android 13)",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
       hl: "ja",
       gl: "JP"
     }
@@ -49,9 +48,9 @@ const body = {
 
   contentCheckOk: true,
   racyCheckOk: true,
-
   videoId
 };
+
 
     const ytRes = await fetch(
       `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
