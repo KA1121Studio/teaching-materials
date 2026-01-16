@@ -20,12 +20,13 @@ async function load() {
   const data = await res.json();
   console.log(data);
 
-  if (data.url) {
-    v.src = data.url;
-  } else {
-    console.error("URL取得失敗", data);
-  }
+if (data.url) {
+  const proxied = "/proxy?url=" + encodeURIComponent(data.url);
+  v.src = proxied;
+} else {
+  console.error("URL取得失敗", data);
 }
+
 
 load();
 </script>
