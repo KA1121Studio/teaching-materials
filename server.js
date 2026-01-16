@@ -29,19 +29,25 @@ app.get("/video", async (req, res) => {
     const apiKey = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"; // YouTube内部公開キー
 
     const body = {
-      context: {
-        client: {
-          clientName: "ANDROID",
-          clientVersion: "18.11.34",
-          androidSdkVersion: 33,
-          userAgent:
-            "com.google.android.youtube/18.11.34 (Linux; U; Android 13)",
-          hl: "ja",
-          gl: "JP"
-        }
-      },
-      videoId
-    };
+  context: {
+    client: {
+      clientName: "ANDROID",
+      clientVersion: "18.12.34",
+      androidSdkVersion: 33,
+      userAgent:
+        "com.google.android.youtube/18.12.34 (Linux; U; Android 13)",
+      hl: "ja",
+      gl: "JP"
+    }
+  },
+
+  // ★★★ これが超重要 ★★★
+  contentCheckOk: true,
+  racyCheckOk: true,
+
+  videoId
+};
+
 
     const ytRes = await fetch(
       `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
