@@ -54,12 +54,13 @@ app.get("/video", async (req, res) => {
       {
         method: "POST",
         headers: {
-          "content-type": "application/json",
-          "user-agent": body.context.client.userAgent,
-          "x-youtube-client-name": "3",
-          "x-youtube-client-version": body.context.client.clientVersion
-          "origin": "https://www.youtube.com"
-        },
+  "content-type": "application/json",
+  "user-agent": body.context.client.userAgent,
+  "x-youtube-client-name": "3",
+  "x-youtube-client-version": body.context.client.clientVersion,
+  "origin": "https://www.youtube.com"
+},
+
         body: JSON.stringify(body)
       }
     );
