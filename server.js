@@ -1,5 +1,5 @@
 import express from "express";
-import { Youtube } from "youtubei.js";
+import YouTube from "youtubei.js"; // ← ここを修正
 import fetch from "node-fetch";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -10,15 +10,12 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Youtubei.js インスタンス
-const youtube = new Youtube();
+const youtube = new YouTube(); // ← インスタンス作成
 
-// ---------- トップページ ----------
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ---------- YouTube動画取得 ----------
 app.get("/video", async (req, res) => {
   const videoId = req.query.id;
   if (!videoId) return res.status(400).json({ error: "video id required" });
@@ -26,12 +23,10 @@ app.get("/video", async (req, res) => {
   try {
     const video = await youtube.getVideo(videoId);
 
-    // adaptiveFormats から video/mp4 を優先
     const streams = video.streams.filter(s => s.type.includes("video/mp4"));
     if (!streams.length)
-      return res.status(500).json({ error: "no_stream_found", message: "再生可能ストリームがありません" });
+      return res.status(500).json({ error: "no_stream_found", message: "再生可能ストリームなし" });
 
-    // ビットレート順で最高画質
     const best = streams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
 
     res.json({
@@ -39,14 +34,12 @@ app.get("/video", async (req, res) => {
       itag: best.itag,
       mimeType: best.type
     });
-
   } catch (e) {
     console.error("YouTube fetch error:", e);
     res.status(500).json({ error: "failed_to_fetch_video", message: e.message });
   }
 });
 
-// ---------- googlevideo プロキシ ----------
 app.get("/proxy", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("URL required");
@@ -66,7 +59,6 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
-// ---------- 起動 ----------
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
