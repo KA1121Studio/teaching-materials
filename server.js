@@ -28,50 +28,44 @@ app.get("/video", async (req, res) => {
 
   try {
     // まずInvidiousから動画情報を取得
-    const instances = [
-  "https://invidious.snopyta.org",
+// 候補のInvidious一覧
+const instances = [
   "https://inv.nadeko.net",
   "https://yewtu.be",
+  "https://invidious.snopyta.org",
   "https://invidious.private.coffee"
 ];
 
-// とりあえず最初に生きてるやつを使う
-let apiUrl = null;
-let lastError = null;
+let info = null;
+let usedHost = null;
 
+// ★ 生きているサーバーを探して“実データ”を取るまで回す
 for (const host of instances) {
+  const apiUrl = `${host}/api/v1/videos/${videoId}`;
+
   try {
-    const test = await fetch(`${host}/api/v1/videos/${videoId}`, { method: "HEAD" });
-    if (test.ok) {
-      apiUrl = `${host}/api/v1/videos/${videoId}`;
-      break;
-    }
+    const r = await fetch(apiUrl);
+    const text = await r.text();
+
+    // JSONにできたら成功として採用
+    info = JSON.parse(text);
+    usedHost = host;
+    console.log("使用Invidious:", host);
+    break;
+
   } catch (e) {
-    lastError = e;
+    console.warn("失敗:", host, e.message);
   }
 }
 
-if (!apiUrl) {
-  console.error("利用可能なInvidiousが見つからない", lastError);
+// 全部ダメだったときだけ終了
+if (!info) {
   return res.status(502).json({
     error: "no_invidious_available",
     message: "利用可能なInvidiousが見つかりません"
   });
 }
 
-    const r = await fetch(apiUrl);
-    const text = await r.text();
-
-    let info;
-    try {
-      info = JSON.parse(text);
-    } catch {
-      console.error("InvidiousがHTMLを返した:", text.slice(0, 200));
-      return res.status(502).json({
-        error: "invidious_down",
-        message: "InvidiousがJSONを返しません"
-      });
-    }
     // mp4形式のストリームだけ抽出
     const streams = info.formatStreams.filter(s =>
       s.mimeType.includes("video/mp4")
