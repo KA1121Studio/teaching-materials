@@ -30,8 +30,19 @@ app.get("/video", async (req, res) => {
     // まずInvidiousから動画情報を取得
     const apiUrl = `https://invidious.fdn.fr/api/v1/videos/${videoId}`;
 
-    const info = await fetch(apiUrl).then(r => r.json());
+    const r = await fetch(apiUrl);
+    const text = await r.text();
 
+    let info;
+    try {
+      info = JSON.parse(text);
+    } catch {
+      console.error("InvidiousがHTMLを返した:", text.slice(0, 200));
+      return res.status(502).json({
+        error: "invidious_down",
+        message: "InvidiousがJSONを返しません"
+      });
+    }
     // mp4形式のストリームだけ抽出
     const streams = info.formatStreams.filter(s =>
       s.mimeType.includes("video/mp4")
