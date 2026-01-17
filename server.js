@@ -28,7 +28,36 @@ app.get("/video", async (req, res) => {
 
   try {
     // まずInvidiousから動画情報を取得
-    const apiUrl = `https://invidious.fdn.fr/api/v1/videos/${videoId}`;
+    const instances = [
+  "https://invidious.snopyta.org",
+  "https://inv.nadeko.net",
+  "https://yewtu.be",
+  "https://invidious.private.coffee"
+];
+
+// とりあえず最初に生きてるやつを使う
+let apiUrl = null;
+let lastError = null;
+
+for (const host of instances) {
+  try {
+    const test = await fetch(`${host}/api/v1/videos/${videoId}`, { method: "HEAD" });
+    if (test.ok) {
+      apiUrl = `${host}/api/v1/videos/${videoId}`;
+      break;
+    }
+  } catch (e) {
+    lastError = e;
+  }
+}
+
+if (!apiUrl) {
+  console.error("利用可能なInvidiousが見つからない", lastError);
+  return res.status(502).json({
+    error: "no_invidious_available",
+    message: "利用可能なInvidiousが見つかりません"
+  });
+}
 
     const r = await fetch(apiUrl);
     const text = await r.text();
