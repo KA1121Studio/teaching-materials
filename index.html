@@ -4,18 +4,44 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ANDROID URL Test</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+      color: #fff;
+    }
+    #video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* アスペクト比を維持 */
+      background: #000;
+    }
+    #audio {
+      display: none;
+    }
+  </style>
 </head>
-<body style="background:#111;color:#fff">
+<body>
 
-<h2>ANDROID client test</h2>
-
-<video id="video" controls autoplay muted playsinline style="width:100%"></video>
-<audio id="audio" style="display:none"></audio>
+<video id="video" controls autoplay muted playsinline></video>
+<audio id="audio"></audio>
 
 <script>
-const videoId = "niKAylKNIEI";
 const videoEl = document.getElementById("video");
 const audioEl = document.getElementById("audio");
+
+// URL末尾からビデオIDを取得
+const videoId = window.location.pathname.slice(1); // '/' を取り除く
+
+if (!videoId) {
+  console.error("URLにビデオIDを指定してください");
+}
 
 // fetchで動画・音声URLを取得
 async function load() {
@@ -27,31 +53,17 @@ async function load() {
     return;
   }
 
-  // video/audioのsrcをセット
   videoEl.src = "/proxy?url=" + encodeURIComponent(data.video);
   audioEl.src = "/proxy?url=" + encodeURIComponent(data.audio);
 
-  // video再生時にaudioも同期再生
-  videoEl.addEventListener("play", () => {
-    audioEl.play();
-  });
-
-  videoEl.addEventListener("pause", () => {
-    audioEl.pause();
-  });
-
-  videoEl.addEventListener("seeking", () => {
-    audioEl.currentTime = videoEl.currentTime;
-  });
-
-  videoEl.addEventListener("ratechange", () => {
-    audioEl.playbackRate = videoEl.playbackRate;
-  });
+  videoEl.addEventListener("play", () => audioEl.play());
+  videoEl.addEventListener("pause", () => audioEl.pause());
+  videoEl.addEventListener("seeking", () => audioEl.currentTime = videoEl.currentTime);
+  videoEl.addEventListener("ratechange", () => audioEl.playbackRate = videoEl.playbackRate);
 }
 
 load();
 </script>
-
 
 </body>
 </html>
