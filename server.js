@@ -22,10 +22,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// URL末尾のビデオIDを受け取って index.html を返すルート
-app.get("/:videoId", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+
 
 
 import { execSync } from "child_process";
@@ -58,7 +55,10 @@ app.get("/video", async (req, res) => {
   }
 });
 
-
+// URL末尾のビデオIDを受け取って index.html を返すルート
+app.get("/:videoId", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // プロキシ配信
 app.get("/proxy", async (req, res) => {
