@@ -22,79 +22,33 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+import { execSync } from "child_process";   // ← これだけ先頭に追加
+
 app.get("/video", async (req, res) => {
   const videoId = req.query.id;
   if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-    // まずInvidiousから動画情報を取得
-const instances = [
-  "https://invidious.fdn.fr",
-  "https://invidious.jing.rocks",
-  "https://inv.tux.pizza",
-  "https://invidious.protokolla.fi"
-];
-
-
-let info = null;
-let usedHost = null;
-
-// 生きているサーバーを探して“実データ”を取るまで回す
-for (const host of instances) {
-  const apiUrl = `${host}/api/v1/videos/${videoId}`;
-
-  try {
-    const r = await fetch(apiUrl);
-    const text = await r.text();
-
-    // JSONにできたら成功として採用
-    info = JSON.parse(text);
-    usedHost = host;
-    console.log("使用Invidious:", host);
-    break;
-
-  } catch (e) {
-    console.warn("失敗:", host, e.message);
-  }
-}
-
-// 全部ダメだったときだけ終了
-if (!info) {
-  return res.status(502).json({
-    error: "no_invidious_available",
-    message: "利用可能なInvidiousが見つかりません"
-  });
-}
-
-    // mp4形式のストリームだけ抽出
-    const streams = info.formatStreams.filter(s =>
-      s.mimeType.includes("video/mp4")
-    );
-
-    if (!streams.length) {
-      return res.status(500).json({
-        error: "no_stream_found",
-        message: "mp4ストリームが見つからない"
-      });
-    }
-
-    // ビットレートが一番高いものを選ぶ（今の設計と同じ思想）
-    const best = streams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+    const url = execSync(
+      `yt-dlp -f best --get-url https://youtu.be/${videoId}`
+    )
+      .toString()
+      .trim();
 
     res.json({
-      url: best.url,
-      itag: best.itag,
-      mimeType: best.mimeType
+      url,
+      source: "yt-dlp"
     });
 
   } catch (e) {
-    console.error("Invidious fetch error:", e);
+    console.error("yt-dlp error:", e);
     res.status(500).json({
       error: "failed_to_fetch_video",
       message: e.message
     });
   }
 });
+
 
 
 // プロキシ配信
