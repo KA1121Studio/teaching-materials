@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// YouTubeクライアント初期化する
+// YouTubeクライアント初期化
 let youtube;
 (async () => {
   youtube = await Innertube.create();
@@ -21,9 +21,6 @@ let youtube;
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
-
-
-
 
 import { execSync } from "child_process";
 
@@ -55,10 +52,7 @@ app.get("/video", async (req, res) => {
   }
 });
 
-// URL末尾のビデオIDを受け取って index.html を返すルート
-app.get("/:videoId", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+
 
 // プロキシ配信
 app.get("/proxy", async (req, res) => {
