@@ -22,7 +22,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-import { execSync } from "child_process";   // ← これだけ先頭に追加
+import { execSync } from "child_process";
 
 app.get("/video", async (req, res) => {
   const videoId = req.query.id;
@@ -30,14 +30,14 @@ app.get("/video", async (req, res) => {
 
   try {
     const url = execSync(
-      `yt-dlp -f best --get-url https://youtu.be/${videoId}`
+      `yt-dlp --cookies youtube-cookies.txt --get-url https://youtu.be/${videoId}`
     )
       .toString()
       .trim();
 
     res.json({
       url,
-      source: "yt-dlp"
+      source: "yt-dlp-with-cookies"
     });
 
   } catch (e) {
@@ -48,7 +48,6 @@ app.get("/video", async (req, res) => {
     });
   }
 });
-
 
 
 // プロキシ配信
