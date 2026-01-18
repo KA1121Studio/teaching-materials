@@ -4,8 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ANDROID URL Test</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
 </head>
 <body style="background:#111;color:#fff">
 
@@ -22,22 +20,16 @@ async function load() {
   const data = await res.json();
   console.log(data);
 
-  if (!data.url) {
-    console.error("URL取得失敗", data);
-    return;
-  }
+if (data.url) {
+  const proxied = "/proxy?url=" + encodeURIComponent(data.url);
 
-  const hlsUrl = "/proxy-hls?url=" + encodeURIComponent(data.url);
 
-  if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(hlsUrl);
-    hls.attachMedia(v);
-  } else {
-    // それでもダメならフォールバック
-    v.src = hlsUrl;
+  v.src = proxied;
+} else {
+  console.error("URL取得失敗", data);
   }
 }
+
 
 load();
 </script>
