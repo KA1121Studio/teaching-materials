@@ -21,7 +21,8 @@ async function load() {
   console.log(data);
 
 if (data.url) {
-  const proxied = "/proxy?url=" + encodeURIComponent(data.url);
+  const proxied = "/proxy-hls?url=" + encodeURIComponent(data.url);
+
   v.src = proxied;
 } else {
   console.error("URL取得失敗", data);
