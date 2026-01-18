@@ -1,33 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ANDROID URL Test</title>
+  <meta charset="UTF-8">
+  <title>YouTube DASH再生デモ</title>
 </head>
 <body style="background:#111;color:#fff">
 
-<h2>ANDROID client test (音声付きMP4)</h2>
+<h2>DASH動画同期再生デモ</h2>
 
-<video id="v" controls autoplay muted playsinline style="width:100%"></video>
+<video id="v" controls autoplay playsinline style="width:100%"></video>
+<audio id="a" preload="auto" style="display:none;"></audio>
 
 <script>
-const videoId = "VtGSvx866Js"; // テスト動画ID
-const v = document.getElementById("v");
-
 async function load() {
-  const res = await fetch(`/video?id=${videoId}`);
+  const videoEl = document.getElementById("v");
+  const audioEl = document.getElementById("a");
+
+  // サーバーから動画と音声のURLを取得
+  const res = await fetch("/video?id=VtGSvx866Js");
   const data = await res.json();
-  console.log(data);
 
-  if (!data.url) {
-    console.error("URL取得失敗", data);
-    return;
-  }
+  // URLをセット
+  videoEl.src = data.video; // itag=動画トラック
+  audioEl.src = data.audio; // itag=音声トラック
 
-  // 直接MP4をセット（音声付き）
-  v.src = data.url;
-  v.play();
+  // 同期再生
+  await videoEl.play();
+  await audioEl.play();
+
+  // 簡易同期（動画に追従）
+  videoEl.ontimeupdate = () => {
+    if (Math.abs(videoEl.currentTime - audioEl.currentTime) > 0.1) {
+      audioEl.currentTime = videoEl.currentTime;
+    }
+  };
+
+  // 一時停止/再生も同期
+  videoEl.onpause = () => audioEl.pause();
+  videoEl.onplay = () => audioEl.play();
 }
 
 load();
