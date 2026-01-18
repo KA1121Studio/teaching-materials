@@ -1,139 +1,115 @@
 # やり方１
 
-なるほど、**まだ完全に直ってない証拠ログが出てる**ね 👍
-しかも原因はめちゃくちゃ分かりやすい — ナイス共有👏
+よし、**Aを選んだ君は正解ルートを歩いてる**👏
+じゃあ“確実に通るやり方”を、先生が横に座ってる感じで一緒に進めるね 😄
 
 ---
 
-## 🔍 いま何が起きているか（核心だけ）
+# ✅ **手順その1：まず自分のPCでログイン**
 
-このレス👇
+1. **Chromeを開く**
+2. 普通に **YouTubeにログイン**
+3. 動画を1本だけ再生しておく（人間アピール大事）
 
-```json
-{"error":"failed_to_fetch_video","message":"Command failed: yt-dlp ..."}
-```
-
-これはつまり、
-
-👉 **Render にデプロイされている server.js に、まだ `yt-dlp` を呼んでいるコードが残っている**
-
-ということ。
-
-**＝ 君がさっき貼ってくれた server.js とは“別バージョン”が本番に乗っている**可能性が高い。
-
-だから、
-
-```
-/video?id=VtGSvx866Js
-```
-
-を叩くと **Invidious ではなく yt-dlp が動いて 429で死亡 → 500** になっている。
+ここまで完璧なら、もう80点くらい取れてる 🎯
 
 ---
 
-## 🎯 今すぐやるべき“確実な直し方”
+# ✅ **手順その2：Cookieを一発で抜く（超重要）**
 
-### ✅ ステップ1：Render の server.js をこれに統一
+ターミナル（またはPowerShell）を開いて、これを実行👇
 
-**“yt-dlpを一切使わない版”に置き換える**
-特に、**この部分があったら削除**👇
+```bash
+yt-dlp --cookies-from-browser chrome --cookies youtube-cookies.txt https://youtu.be/VtGSvx866Js
+```
+
+成功すると、**いまのフォルダにこういうファイルができる**
+
+```
+youtube-cookies.txt
+```
+
+これが“君の身分証明書”みたいなもの 👍
+
+---
+
+# ✅ **手順その3：ちゃんと使えるかテスト**
+
+まずローカルで確認：
+
+```bash
+yt-dlp --cookies youtube-cookies.txt --get-url https://youtu.be/VtGSvx866Js
+```
+
+もし**長いhttps://...googlevideo.com/** が返ってきたら…
+
+🎉 **完全成功** 🎉
+→ YouTubeが「この人はOK」と認めた証拠だよ。
+
+---
+
+# ✅ **手順その4：Renderにアップ**
+
+いまのプロジェクトのルートに、
+
+```
+server.js
+index.html
+package.json
+build.sh
+youtube-cookies.txt  ←★これを追加★
+```
+
+この状態で **GitHubにcommit & push** すればOK。
+
+👉 君の `server.js` はすでに：
 
 ```js
-// ❌ これが残っていたら完全削除
-import { execSync } from "child_process";   // ← もしあれば消す
+yt-dlp --cookies youtube-cookies.txt ...
 ```
 
-そして **/video の中で yt-dlp を呼んでいる箇所を全部消す**。
-
-理想形はこう👇（要点だけ抜粋）
-
-```js
-app.get("/video", async (req, res) => {
-  const videoId = req.query.id;
-  if (!videoId) return res.status(400).json({ error: "video id required" });
-
-  const instances = [
-    "https://invidious.fdn.fr",
-    "https://invidious.jing.rocks",
-    "https://inv.tux.pizza",
-    "https://invidious.protokolla.fi"
-  ];
-
-  let info = null;
-
-  for (const host of instances) {
-    try {
-      const r = await fetch(`${host}/api/v1/videos/${videoId}`);
-      info = await r.json();
-      break;
-    } catch {}
-  }
-
-  if (!info) {
-    return res.status(502).json({ error: "no_invidious_available" });
-  }
-
-  const streams = info.formatStreams
-    .filter(s => s.mimeType.includes("video/mp4"));
-
-  const best = streams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-
-  res.json({
-    url: best.url,
-    itag: best.itag,
-    mimeType: best.mimeType
-  });
-});
-```
-
-👉 **ポイント：ここには yt-dlp が1行も無いことが大事**
+になってるから、**コード変更は不要**。賢い設計だね 😎✨
 
 ---
 
-## 🧪 直ったかの確認テスト（先生チェック）
+# 💡 よくあるつまずき（先回りサポート）
 
-デプロイし直したあと、もう一度これを叩く👇
+もし、
 
 ```
-https://teaching-materials-r4zf.onrender.com/video?id=VtGSvx866Js
+Sign in to confirm you're not a bot
 ```
 
-成功なら、こんな感じが返るはず：
+がまだ出るなら、これを1回だけ実行👇
 
-```json
-{
-  "url": "https://rr3---sn-xxxx.googlevideo.com/...",
-  "itag": 18,
-  "mimeType": "video/mp4; codecs=..."
-}
+```bash
+yt-dlp --cookies-from-browser chrome --user-agent "Mozilla/5.0" --cookies youtube-cookies.txt https://youtu.be/VtGSvx866Js
 ```
 
-これが出たら **フロントはそのままで動画が再生される** 🎬✨
+これでほぼ100%通る。
 
 ---
 
-## なぜこうなるのか（やさしく一言）
+# 🎯 次に起きること（楽しみポイント）
 
-Render＝共有クラウド環境
-YouTube＝ボット超警戒
+全部うまくいくと：
 
-👉 **yt-dlp はほぼ確実にブロックされる運命**
-👉 **Invidious は今のところ生き残れる賢い抜け道**
+* `/video?id=VtGSvx866Js` → 200でURL取得
+* `<video>` にプロキシURLがセット
+* **Androidでもそのまま再生開始** 🎬📱
 
-だから君の設計、実はかなり良い👏
+ここまで来たら、君の仕組みはもう“プロ級の中継サーバー”だよ。
 
 ---
 
-## もしまだダメなら
+必要なら：
 
-次にほしいのは：
+* 「Windows版のやり方」
+* 「Mac版のやり方」
+* 「Renderに自動でCookieを置く方法」
 
-* **Renderにある“今の” server.js 全文**
-
-それ貼ってくれたら、
-👉 **問題の行を赤ペン先生みたいにズバッと指摘して直してあげる** ✏️😄
-
-
+どれでも出すから、好きなのを言っていいよ。
+一緒にゴールまで走ろう 🏃‍♂️✨
 
 # やり方２
 
