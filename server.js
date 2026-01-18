@@ -29,13 +29,14 @@ app.get("/video", async (req, res) => {
   if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-    const url = execSync(
+   
+const url = execSync(
   `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url https://youtu.be/${videoId}`
 )
+  .toString()
+  .trim()
+  .split("\n")[0];   // ←★ 最初のURLだけ使う
 
-
-      .toString()
-      .trim();
 
     res.json({
       url,
