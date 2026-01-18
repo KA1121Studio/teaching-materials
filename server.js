@@ -80,6 +80,24 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
+app.get("/proxy-hls", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).send("URL required");
+
+  const r = await fetch(url);
+  let text = await r.text();
+
+  // ←★ 超重要ポイント ★→
+  // HLS内のチャンクURLをすべて /proxy に書き換える
+  text = text.replace(
+    /https:\/\/rr4---sn-[^\/]+\.googlevideo\.com[^\n]+/g,
+    m => "/proxy?url=" + encodeURIComponent(m)
+  );
+
+  res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+  res.send(text);
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
