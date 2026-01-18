@@ -3,13 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ANDROID URL Test</title>
+  <title>ANDROID HLS Test</title>
 </head>
 <body style="background:#111;color:#fff">
 
-<h2>ANDROID client test (MP4 direct)</h2>
+<h2>ANDROID client test (HLS.js)</h2>
 
 <video id="v" controls autoplay muted playsinline style="width:100%"></video>
+
+<!-- HLS.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <script>
 const videoId = "VtGSvx866Js";
@@ -20,12 +23,21 @@ async function load() {
   const data = await res.json();
   console.log(data);
 
-  if (data.url) {
-    // ★ 音声付きMP4は普通のプロキシでOK
-    const proxied = "/proxy?url=" + encodeURIComponent(data.url);
-    v.src = proxied;
-  } else {
+  if (!data.url) {
     console.error("URL取得失敗", data);
+    return;
+  }
+
+  // HLS.js対応
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(`/proxy-hls?url=${encodeURIComponent(data.url)}`);
+    hls.attachMedia(v);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => v.play());
+  } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+    // Safari/iOS向けネイティブ再生
+    v.src = `/proxy-hls?url=${encodeURIComponent(data.url)}`;
+    v.addEventListener('loadedmetadata', () => v.play());
   }
 }
 
