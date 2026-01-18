@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 import { fileURLToPath } from "url";
 import path from "path";
 import { Innertube } from "youtubei.js";
+import fs from "fs";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,8 +19,18 @@ let youtube;
   console.log("YouTube client ready");
 })();
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// 動画IDをURLパスから取得してHTMLに埋め込む
+app.get("/:id?", (req, res) => {
+  const videoId = req.params.id || ""; // パスにIDがなければ空
+  let html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+
+  // index.html内の videoId を置換
+  html = html.replace(
+    /const videoId = ".*";/,
+    `const videoId = "${videoId}";`
+  );
+
+  res.send(html);
 });
 
 import { execSync } from "child_process";
@@ -52,14 +63,12 @@ app.get("/video", async (req, res) => {
   }
 });
 
-
-
 // プロキシ配信
 app.get("/proxy", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("URL required");
 
-  const range = req.headers.range; // ← これが超重要
+  const range = req.headers.range;
 
   try {
     const response = await fetch(url, {
@@ -90,8 +99,7 @@ app.get("/proxy-hls", async (req, res) => {
   const r = await fetch(url);
   let text = await r.text();
 
-  // ←★ 超重要ポイント ★→
-  // HLS内のチャンクURLをすべて /proxy に書き換える
+  // HLS内のチャンクURLを /proxy に書き換え
   text = text.replace(
     /https:\/\/rr4---sn-[^\/]+\.googlevideo\.com[^\n]+/g,
     m => "/proxy?url=" + encodeURIComponent(m)
@@ -100,7 +108,6 @@ app.get("/proxy-hls", async (req, res) => {
   res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
   res.send(text);
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
