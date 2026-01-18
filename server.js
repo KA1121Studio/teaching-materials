@@ -101,21 +101,31 @@ if (!info) {
 app.get("/proxy", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send("URL required");
-  if (!url.startsWith("https://") || !url.includes("googlevideo.com"))
-    return res.status(400).send("Invalid URL");
+
+  const range = req.headers.range; // ← これが超重要
 
   try {
-    const response = await fetch(url);
-    res.set({
-      "Content-Type": response.headers.get("content-type"),
-      "Accept-Ranges": "bytes"
+    const response = await fetch(url, {
+      headers: {
+        Range: range || "bytes=0-"
+      }
     });
+
+    const headers = {
+      "Content-Type": response.headers.get("content-type"),
+      "Accept-Ranges": "bytes",
+      "Content-Range": response.headers.get("content-range") || range
+    };
+
+    res.writeHead(response.status, headers);
     response.body.pipe(res);
+
   } catch (err) {
     console.error("Proxy error:", err);
     res.status(500).send("Proxy failed");
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
