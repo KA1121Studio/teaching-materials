@@ -7,7 +7,7 @@
 </head>
 <body style="background:#111;color:#fff">
 
-<h2>ANDROID client test</h2>
+<h2>ANDROID client test (MP4 direct)</h2>
 
 <video id="v" controls autoplay muted playsinline style="width:100%"></video>
 
@@ -20,16 +20,14 @@ async function load() {
   const data = await res.json();
   console.log(data);
 
-if (data.url) {
-  const proxied = "/proxy-hls?url=" + encodeURIComponent(data.url);
-
-
-  v.src = proxied;
-} else {
-  console.error("URL取得失敗", data);
+  if (data.url) {
+    // ★ 音声付きMP4は普通のプロキシでOK
+    const proxied = "/proxy?url=" + encodeURIComponent(data.url);
+    v.src = proxied;
+  } else {
+    console.error("URL取得失敗", data);
   }
 }
-
 
 load();
 </script>
