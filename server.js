@@ -30,8 +30,9 @@ app.get("/video", async (req, res) => {
 
   try {
     const url = execSync(
-      `yt-dlp --cookies youtube-cookies.txt --get-url https://youtu.be/${videoId}`
-    )
+  `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --user-agent "Mozilla/5.0" --get-url https://youtu.be/${videoId}`
+)
+
       .toString()
       .trim();
 
