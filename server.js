@@ -29,27 +29,22 @@ app.get("/video", async (req, res) => {
   if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-    // bestvideo + bestaudio でURLを別々に取得
-    const urls = execSync(
-      `yt-dlp -f bestvideo+bestaudio --get-url https://youtu.be/${videoId}`
-    )
-      .toString()
-      .trim()
-      .split("\n");
+    // yt-dlpで動画と音声を取得
+    const output = execSync(
+      `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]" --get-url https://youtu.be/${videoId}`
+    ).toString().trim().split("\n");
 
-    res.json({
-      video: urls[0],
-      audio: urls[1],
-      source: "yt-dlp-bestvideo+bestaudio"
-    });
+    const videoUrl = output[0]; // 動画URL
+    const audioUrl = output[1]; // 音声URL
+
+    res.json({ video: videoUrl, audio: audioUrl });
+
   } catch (e) {
     console.error("yt-dlp error:", e);
-    res.status(500).json({
-      error: "failed_to_fetch_video",
-      message: e.message
-    });
+    res.status(500).json({ error: "failed_to_fetch_video", message: e.message });
   }
 });
+
 
 
 // プロキシ配信
