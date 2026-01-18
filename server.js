@@ -29,16 +29,13 @@ app.get("/video", async (req, res) => {
   if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-   
-
-const url = execSync(
-  `yt-dlp -f best[ext=mp4] --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url https://youtu.be/${videoId}`
-)
-  .toString()
-  .trim()
-  .split("\n")[0];   // ←★ 最初のURLだけ使う
-
-
+    // ★ 音声付きMP4を優先取得 ★
+    const url = execSync(
+      `yt-dlp -f best[ext=mp4] --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url https://youtu.be/${videoId}`
+    )
+      .toString()
+      .trim()
+      .split("\n")[0]; // 最初のURLだけ使用
 
     res.json({
       url,
@@ -53,7 +50,6 @@ const url = execSync(
     });
   }
 });
-
 
 // プロキシ配信
 app.get("/proxy", async (req, res) => {
