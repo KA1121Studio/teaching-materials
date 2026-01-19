@@ -1,1 +1,1 @@
-### https://teaching-materials-r4zf.onrender.com/watch.html?id=VtGSvx866Js で再生
+#### https://teaching-materials-r4zf.onrender.com/watch.html?id=VIDEO ID で再生
