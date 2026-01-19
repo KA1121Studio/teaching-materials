@@ -22,6 +22,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// watch.html 用 
+app.get("/watch.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "watch.html"));
+});
+
 import { execSync } from "child_process";
 
 app.get("/video", async (req, res) => {
