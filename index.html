@@ -27,10 +27,10 @@ async function load() {
     return;
   }
 
-  // video/audioのsrcをセット
-  videoEl.src = "/proxy?url=" + encodeURIComponent(data.video);
-  audioEl.src = "/proxy?url=" + encodeURIComponent(data.audio);
+videoEl.src = data.video;
+audioEl.src = data.audio;
 
+  
   // video再生時にaudioも同期再生
   videoEl.addEventListener("play", () => {
     audioEl.play();
