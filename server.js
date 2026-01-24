@@ -36,13 +36,14 @@ app.get("/video", async (req, res) => {
   try {
     // yt-dlpで動画と音声を取得
 // server.js の yt-dlp コマンド部分だけ差し替え
+// 変更後：Cookie を使わず「ログインしていない状態」で取得
 const output = execSync(
-  `yt-dlp --cookies youtube-cookies.txt ` +
-  `--js-runtimes node --remote-components ejs:github ` +
-  `--sleep-requests 1 --user-agent "Mozilla/5.0" ` +
+  `yt-dlp --js-runtimes node ` +
+  `--remote-components ejs:github --user-agent "Mozilla/5.0" ` +
   `-f "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]" ` +
   `--get-url https://youtu.be/${videoId}`
 ).toString().trim().split("\n");
+
 
 
     const videoUrl = output[0]; // 動画URL
