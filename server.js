@@ -29,50 +29,6 @@ app.get("/watch.html", (req, res) => {
 
 import { execSync } from "child_process";
 
-app.get("/video", async (req, res) => {
-  const videoId = req.query.id;
-  if (!videoId) return res.status(400).json({ error: "video id required" });
-
-  try {
-    const output = execSync(
-      `yt-dlp --cookies youtube-cookies.txt ` +
-      `--js-runtimes node --remote-components ejs:github ` +  // 復活（必須）
-      `--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" ` +
-      `-f "best[height<=720]/best" ` +  // 緩和（最初は制限なし）
-      `--get-url https://youtu.be/${videoId}`
-    ).toString().trim();
-
-    const videoUrl = output.split("\n").filter(Boolean)[0];
-
-    if (!videoUrl) {
-      return res.status(404).json({ error: "no stream found" });
-    }
-
-    res.json({
-      video: videoUrl,
-      audio: null,
-      source: "yt-dlp-fixed"
-    });
-
-  } catch (e) {
-    console.error("yt-dlp error:", e.message);
-    
-    // フォールバック：リスト表示してデバッグ
-    try {
-      const formats = execSync(
-        `yt-dlp --cookies youtube-cookies.txt --list-formats https://youtu.be/${videoId}`
-      ).toString();
-      console.log("Available formats:", formats);
-    } catch {}
-    
-    res.status(500).json({
-      error: "failed_to_fetch_video",
-      message: e.message,
-      videoId: videoId
-    });
-  }
-});
-
 
 
 // プロキシ配信
@@ -87,6 +43,41 @@ app.get("/proxy", async (req, res) => {
         Range: range || "bytes=0-"
       }
     });
+    
+app.get("/video", async (req, res) => {
+  const videoId = req.query.id;
+  if (!videoId) return res.status(400).json({ error: "video id required" });
+
+  try {
+    const output = execSync(
+      `yt-dlp --cookies youtube-cookies.txt ` +
+      `--js-runtimes node --remote-components ejs:github ` +
+      `--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" ` +
+      `-f "best[ext=mp4][protocol^=https][protocol!*=manifest][height<=720]/best[ext=mp4][protocol^=https][protocol!*=manifest]/best[ext=mp4][protocol^=https]/best[height<=720][ext=mp4]" ` +
+      `--get-url https://youtu.be/${videoId}`
+    ).toString().trim();
+
+    const videoUrl = output.split("\n").filter(Boolean)[0];
+
+    if (!videoUrl || videoUrl.includes('.m3u8')) {
+      throw new Error("No direct MP4 stream available");
+    }
+
+    res.json({
+      video: videoUrl,
+      audio: null,
+      source: "yt-dlp-mp4-only"
+    });
+
+  } catch (e) {
+    console.error("yt-dlp error:", e.message);
+    res.status(500).json({
+      error: "failed_to_fetch_video",
+      message: e.message,
+      videoId: videoId
+    });
+  }
+});
 
     const headers = {
       "Content-Type": response.headers.get("content-type"),
