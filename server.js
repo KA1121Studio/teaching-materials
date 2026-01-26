@@ -29,6 +29,34 @@ app.get("/watch.html", (req, res) => {
 
 import { execSync } from "child_process";
 
+app.get("/video", async (req, res) => {
+  const videoId = req.query.id;
+  if (!videoId) return res.status(400).json({ error: "video id required" });
+
+  try {
+    // yt-dlpで動画と音声を取得
+    const output = execSync(
+      `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]" https://youtu.be/${videoId}`
+    ).toString().trim().split("\n");
+
+    const videoUrl = output[0]; // 動画URL
+    const audioUrl = output[1]; // 音声URL
+
+    res.json({
+      video: videoUrl,
+      audio: audioUrl,
+      source: "yt-dlp-with-cookies"
+    });
+
+  } catch (e) {
+    console.error("yt-dlp error:", e);
+    res.status(500).json({
+      error: "failed_to_fetch_video",
+      message: e.message
+    });
+  }
+});
+
 
 
 // プロキシ配信
@@ -43,41 +71,6 @@ app.get("/proxy", async (req, res) => {
         Range: range || "bytes=0-"
       }
     });
-    
-app.get("/video", async (req, res) => {
-  const videoId = req.query.id;
-  if (!videoId) return res.status(400).json({ error: "video id required" });
-
-  try {
-    const output = execSync(
-      `yt-dlp --cookies youtube-cookies.txt ` +
-      `--js-runtimes node --remote-components ejs:github ` +
-      `--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" ` +
-      `-f "best[ext=mp4][protocol^=https][protocol!*=manifest][height<=720]/best[ext=mp4][protocol^=https][protocol!*=manifest]/best[ext=mp4][protocol^=https]/best[height<=720][ext=mp4]" ` +
-      `--get-url https://youtu.be/${videoId}`
-    ).toString().trim();
-
-    const videoUrl = output.split("\n").filter(Boolean)[0];
-
-    if (!videoUrl || videoUrl.includes('.m3u8')) {
-      throw new Error("No direct MP4 stream available");
-    }
-
-    res.json({
-      video: videoUrl,
-      audio: null,
-      source: "yt-dlp-mp4-only"
-    });
-
-  } catch (e) {
-    console.error("yt-dlp error:", e.message);
-    res.status(500).json({
-      error: "failed_to_fetch_video",
-      message: e.message,
-      videoId: videoId
-    });
-  }
-});
 
     const headers = {
       "Content-Type": response.headers.get("content-type"),
