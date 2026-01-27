@@ -31,37 +31,31 @@ import { execSync } from "child_process";
 
 app.get("/video", async (req, res) => {
   const videoId = req.query.id;
-  if (!videoId) {
-    return res.status(400).json({ error: "video id required" });
-  }
-
-  // 念のための最低限バリデーション
-  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
-    return res.status(400).json({ error: "invalid video id" });
-  }
+  if (!videoId) return res.status(400).json({ error: "video id required" });
 
   try {
-   const url = execSync(
-  `yt-dlp -f "best[acodec!=none][vcodec!=none]" \
-   --cookies youtube-cookies.txt \
-   --user-agent "Mozilla/5.0" \
-   -g https://youtu.be/${videoId}`
-)
-  .toString()
-  .trim();
+    // yt-dlpで動画と音声を取得
+    const output = execSync(
+      `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]" https://youtu.be/${videoId}`
+    ).toString().trim().split("\n");
 
+    const videoUrl = output[0]; // 動画URL
+    const audioUrl = output[1]; // 音声URL
 
     res.json({
-      video: url,
-      source: "progressive"
+      video: videoUrl,
+      audio: audioUrl,
+      source: "yt-dlp-with-cookies"
     });
 
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "failed_to_fetch_video" });
+    console.error("yt-dlp error:", e);
+    res.status(500).json({
+      error: "failed_to_fetch_video",
+      message: e.message
+    });
   }
 });
-
 
 
 
