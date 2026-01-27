@@ -31,8 +31,8 @@ if (!videoId) {
         return;
       }
 
-videoEl.src = data.video;
-audioEl.src = data.audio;
+      videoEl.src = "/proxy?url=" + encodeURIComponent(data.video);
+      audioEl.src = "/proxy?url=" + encodeURIComponent(data.audio);
 
 
       // 動画と音声を同期
