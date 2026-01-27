@@ -41,14 +41,15 @@ app.get("/video", async (req, res) => {
   }
 
   try {
-    const url = execSync(
-      `yt-dlp -f "best[acodec!=none]/best" \
-       --cookies youtube-cookies.txt \
-       --user-agent "Mozilla/5.0" \
-       --get-url https://youtu.be/${videoId}`
-    )
-      .toString()
-      .trim();
+   const url = execSync(
+  `yt-dlp -f "best[acodec!=none][vcodec!=none]" \
+   --cookies youtube-cookies.txt \
+   --user-agent "Mozilla/5.0" \
+   -g https://youtu.be/${videoId}`
+)
+  .toString()
+  .trim();
+
 
     res.json({
       video: url,
