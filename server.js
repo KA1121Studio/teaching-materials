@@ -36,7 +36,7 @@ app.get("/video", async (req, res) => {
   try {
     // yt-dlpで動画と音声を取得
     const output = execSync(
-      `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]" https://youtu.be/${videoId}`
+      `yt-dlp --cookies youtube-cookies.txt --js-runtimes node --remote-components ejs:github --sleep-requests 1 --user-agent "Mozilla/5.0" --get-url -f https://youtu.be/${videoId}`
     ).toString().trim().split("\n");
 
     const videoUrl = output[0]; // 動画URL
