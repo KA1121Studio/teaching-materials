@@ -72,7 +72,7 @@ app.get("/video-only", async (req, res) => {
 
   try {
     const output = execSync(
-      `yt-dlp --cookies youtube-cookies.txt --get-url -f "bestvideo[ext=mp4]" https://youtu.be/${videoId}`
+      `yt-dlp --cookies youtube-cookies.txt --get-url -f "bestvideo[ext=mp4]/bestvideo" https://youtu.be/${videoId}`
     ).toString().trim();
 
     res.json({ video: output });
@@ -89,7 +89,7 @@ app.get("/audio-only", async (req, res) => {
 
   try {
     const output = execSync(
-      `yt-dlp --cookies youtube-cookies.txt --get-url -f "bestaudio[ext=m4a]" https://youtu.be/${videoId}`
+      `yt-dlp --cookies youtube-cookies.txt --get-url -f "bestaudio[ext=m4a]/bestaudio" https://youtu.be/${videoId}`
     ).toString().trim();
 
     res.json({ audio: output });
@@ -98,6 +98,7 @@ app.get("/audio-only", async (req, res) => {
     res.status(500).json({ error: "failed_to_fetch_audio_only" });
   }
 });
+
 
 
 
